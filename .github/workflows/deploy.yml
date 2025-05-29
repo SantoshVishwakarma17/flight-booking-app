@@ -1,0 +1,29 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # deploys when code is pushed to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.1
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: Deploy App on EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ec2-user@54.161.74.180 << 'EOF'
+          cd flight-booking-app
+          git pull origin main
+          cd server
+          npm install
+          pm2 restart flight-server || pm2 start index.js --name "flight-server"
+        EOF
